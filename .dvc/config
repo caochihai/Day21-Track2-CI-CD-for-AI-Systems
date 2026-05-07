@@ -1,0 +1,5 @@
+[core]
+    remote = myremote
+['remote "myremote"']
+    url = gs://wine-data-production/dvc
+    credentialpath = ../lab7-5-495605-05cea1857c77.json
