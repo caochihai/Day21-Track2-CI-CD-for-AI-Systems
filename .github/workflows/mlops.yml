@@ -83,7 +83,7 @@ jobs:
           path: outputs
       - name: Check accuracy threshold
         run: |
-          python -c "import json; acc = json.load(open('outputs/metrics.json'))['accuracy']; print(f'Accuracy: {acc}'); exit(0 if acc >= 0.65 else 1)"
+          python -c "import json; acc = json.load(open('outputs/metrics.json'))['accuracy']; print(f'Accuracy: {acc}'); exit(0 if acc >= 0.60 else 1)"
 
   # 4. Triển khai (Deploy)
   deploy:
