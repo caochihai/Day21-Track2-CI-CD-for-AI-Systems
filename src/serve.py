@@ -3,83 +3,67 @@ from pydantic import BaseModel
 from google.cloud import storage
 import joblib
 import os
+import uvicorn
 
-app = FastAPI()
+app = FastAPI(title="Wine Quality Prediction API")
 
-GCS_BUCKET = os.environ["GCS_BUCKET"]
+# Cấu hình các đường dẫn (Đọc từ biến môi trường nếu có)
+GCS_BUCKET = os.environ.get("CLOUD_BUCKET", "wine-data-production")
 GCS_MODEL_KEY = "models/latest/model.pkl"
 MODEL_PATH = os.path.expanduser("~/models/model.pkl")
 
-
 def download_model():
-    """
-    Tai file model.pkl tu GCS ve may khi server khoi dong.
+    """Tải file model.pkl từ GCS về máy khi server khởi động."""
+    try:
+        if not os.path.exists(os.path.dirname(MODEL_PATH)):
+            os.makedirs(os.path.dirname(MODEL_PATH))
+        
+        print(f"Đang tải model từ bucket: {GCS_BUCKET}...")
+        client = storage.Client()
+        bucket = client.bucket(GCS_BUCKET)
+        blob = bucket.blob(GCS_MODEL_KEY)
+        blob.download_to_filename(MODEL_PATH)
+        print("Tải model thành công!")
+        return True
+    except Exception as e:
+        print(f"Lỗi khi tải model: {e}")
+        return False
 
-    Ham nay duoc goi mot lan khi module duoc import. Su dung
-    GOOGLE_APPLICATION_CREDENTIALS de xac thuc (duoc dat trong systemd service).
-    """
-    # TODO 1: Tao storage.Client()
-    # client = storage.Client()
-
-    # TODO 2: Lay bucket va blob tuong ung
-    # bucket = client.bucket(GCS_BUCKET)
-    # blob   = bucket.blob(GCS_MODEL_KEY)
-
-    # TODO 3: Tai file model xuong may
-    # blob.download_to_filename(MODEL_PATH)
-
-    # TODO 4: In thong bao thanh cong
-    # print("Model da duoc tai xuong tu GCS.")
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
-
-
+# Tải model ngay khi khởi động API
 download_model()
-model = joblib.load(MODEL_PATH)
-
+model = None
+if os.path.exists(MODEL_PATH):
+    model = joblib.load(MODEL_PATH)
 
 class PredictRequest(BaseModel):
     features: list[float]
 
-
 @app.get("/health")
 def health():
-    """
-    Endpoint kiem tra suc khoe server.
-    GitHub Actions goi endpoint nay sau khi deploy de xac nhan server dang chay.
-
-    Tra ve: {"status": "ok"}
-    """
-    # TODO 5: Tra ve dict {"status": "ok"}
-    pass  # xoa dong nay sau khi hoan thanh
-
+    """Kiểm tra trạng thái server và model."""
+    return {
+        "status": "ok", 
+        "model_loaded": model is not None,
+        "bucket": GCS_BUCKET
+    }
 
 @app.post("/predict")
 def predict(req: PredictRequest):
-    """
-    Endpoint suy luan chinh.
+    """Nhận 12 đặc trưng và trả về kết quả dự đoán."""
+    if model is None:
+        raise HTTPException(status_code=503, detail="Mô hình chưa được tải lên máy chủ.")
+    
+    if len(req.features) != 12:
+        raise HTTPException(status_code=400, detail="Cần cung cấp đủ 12 đặc trưng hóa học (Wine Quality).")
 
-    Dau vao : JSON {"features": [f1, f2, ..., f12]}
-    Dau ra  : JSON {"prediction": <0|1|2>, "label": <"thap"|"trung_binh"|"cao">}
-
-    Thu tu 12 dac trung (khop voi thu tu trong FEATURE_NAMES cua test):
-        fixed_acidity, volatile_acidity, citric_acid, residual_sugar,
-        chlorides, free_sulfur_dioxide, total_sulfur_dioxide, density,
-        pH, sulphates, alcohol, wine_type
-    """
-    # TODO 6: Kiem tra so luong dac trung.
-    # Neu len(req.features) != 12, raise HTTPException(status_code=400, ...)
-
-    # TODO 7: Goi model.predict([req.features]) de lay ket qua du doan.
-    # pred = model.predict(...)
-
-    # TODO 8: Tra ve dict chua "prediction" (int) va "label" (string).
-    # Nhan tuong ung: 0 -> "thap", 1 -> "trung_binh", 2 -> "cao"
-    # return {"prediction": ..., "label": ...}
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
-
+    # Dự đoán
+    prediction = int(model.predict([req.features])[0])
+    labels = {0: "thấp", 1: "trung bình", 2: "cao"}
+    
+    return {
+        "prediction": prediction,
+        "label": labels.get(prediction, "không xác định")
+    }
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
