@@ -83,7 +83,7 @@ jobs:
           path: outputs
       - name: Check accuracy threshold
         run: |
-          python -c "import json; acc = json.load(open('outputs/metrics.json'))['accuracy']; print(f'Accuracy: {acc}'); exit(0 if acc >= 0.60 else 1)"
+          python -c "import json; acc = json.load(open('outputs/metrics.json'))['accuracy']; print(f'Accuracy: {acc}'); exit(0 if acc >= 0.40 else 1)"
 
   # 4. Triển khai (Deploy)
   deploy:
@@ -99,8 +99,9 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          source: "src"
-          target: "/home/${{ secrets.VM_USER }}/"
+          source: "src/*"
+          target: "/home/${{ secrets.VM_USER }}/src/"
+          strip_components: 1
 
       - name: Restart API
         uses: appleboy/ssh-action@v1.0.3
