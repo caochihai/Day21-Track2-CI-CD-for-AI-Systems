@@ -323,3 +323,19 @@ Xem phần xử lý sự cố chi tiết trong từng file hướng dẫn:
 ---
 
 Bắt đầu: [Bước 1 - Thực nghiệm cục bộ](tasks/buoc-1.md)
+
+---
+
+## Kết Quả Triển Khai (Dự Án Đã Hoàn Thành)
+
+Hệ thống MLOps đã được thiết lập và vận hành thành công với đầy đủ các tính năng:
+
+1.  **Pipeline CI/CD:** Tự động hóa hoàn toàn 4 giai đoạn: Unit Test -> Train -> Eval -> Deploy trên GitHub Actions.
+2.  **Quản lý dữ liệu:** Kết nối thành công DVC với Google Cloud Storage làm Remote Storage.
+3.  **Mô hình:** Được huấn luyện tự động và lưu trữ phiên bản mới nhất trên Cloud.
+4.  **Phục vụ mô hình (Serving):** Triển khai thành công REST API bằng FastAPI trên máy chủ Google Cloud VM.
+
+### Kết quả thực tế:
+- **Độ chính xác (Accuracy):** Vượt ngưỡng yêu cầu (> 0.60).
+- **Endpoint API:** `http://34.60.5.195:8000/predict` đã phản hồi chính xác kết quả dự đoán (Ví dụ: `{"prediction":0,"label":"thấp"}`).
+- **Trạng thái hệ thống:** Tất cả các GitHub Actions jobs đều đạt trạng thái xanh (Success).
