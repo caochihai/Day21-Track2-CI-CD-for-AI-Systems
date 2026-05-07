@@ -91,7 +91,18 @@ jobs:
     needs: eval
     runs-on: ubuntu-latest
     steps:
-      - name: Restart Service on VM
+      - uses: actions/checkout@v4
+
+      - name: Copy src to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          source: "src/*"
+          target: "/home/${{ secrets.VM_USER }}/"
+
+      - name: Restart API
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_HOST }}
